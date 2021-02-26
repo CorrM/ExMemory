@@ -29,7 +29,7 @@ namespace ExMemory
 			if (!Cache.ContainsKey(thisType))
 			{
 				List<FieldInfo> fields = thisType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
-					.Where(f => f.FieldType == typeof(ExOffset) || f.FieldType.IsSubclassOfRawGeneric(typeof(ExternalOffset<>)))
+					.Where(f => f.FieldType == typeof(ExOffset) || f.FieldType.IsSubclassOfRawGeneric(typeof(ExOffset<>)))
 					.ToList();
 
 				Cache.Add(thisType, fields);
@@ -42,7 +42,7 @@ namespace ExMemory
 					var curOffset = (ExOffset)f.GetValue(this);
 
 					if (curOffset is null)
-						throw new NullReferenceException($"ExternalOffset can't be null, Offset name '{f.Name}'.");
+						throw new NullReferenceException($"ExOffset can't be null, Offset name '{f.Name}'.");
 
 
 					// Set Info
@@ -91,7 +91,7 @@ namespace ExMemory
 			return BaseAddress != UIntPtr.Zero && ExMemory.ReadClass(this, BaseAddress, fullClassBytes.Span);
 		}
 
-		public bool WriteOffset<T>(ExternalOffset<T> offset, T value)
+		public bool WriteOffset<T>(ExOffset<T> offset, T value)
 		{
 			return offset.Write(value);
 		}

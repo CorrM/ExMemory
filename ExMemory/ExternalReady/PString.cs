@@ -5,8 +5,8 @@ namespace ExMemory.ExternalReady
 	public class PString : ExClass
 	{
 		#region Offsets
-		protected ExternalOffset<UIntPtr> _stringPointer;
-		protected ExternalOffset<string> _stringData;
+		protected ExOffset<UIntPtr> _stringPointer;
+		protected ExOffset<string> _stringData;
 		#endregion
 
 		#region Props
@@ -21,8 +21,8 @@ namespace ExMemory.ExternalReady
 		{
 			base.InitOffsets();
 
-			_stringPointer = new ExternalOffset<UIntPtr>(0x00);
-			_stringData = new ExternalOffset<string>(_stringPointer, 0x00);
+			_stringPointer = new ExOffset<UIntPtr>(0x00);
+			_stringData = new ExOffset<string>(_stringPointer, 0x00);
 		}
 	}
 }

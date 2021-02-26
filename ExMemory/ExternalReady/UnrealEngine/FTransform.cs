@@ -8,9 +8,9 @@ namespace ExMemory.ExternalReady.UnrealEngine
 		public static readonly FTransform Zero = new();
 
 		#region Offsets
-		protected ExternalOffset<Vector4> _rotation;
-		protected ExternalOffset<Vector3> _translation;
-		protected ExternalOffset<Vector3> _scale3D;
+		protected ExOffset<Vector4> _rotation;
+		protected ExOffset<Vector3> _translation;
+		protected ExOffset<Vector3> _scale3D;
 		#endregion
 
 		#region Props
@@ -38,9 +38,9 @@ namespace ExMemory.ExternalReady.UnrealEngine
 		{
 			base.InitOffsets();
 
-			_rotation = new ExternalOffset<Vector4>(ExOffset.None, 0x00);
-			_translation = new ExternalOffset<Vector3>(ExOffset.None, 0x10);
-			_scale3D = new ExternalOffset<Vector3>(ExOffset.None, 0x1C);
+			_rotation = new ExOffset<Vector4>(ExOffset.None, 0x00);
+			_translation = new ExOffset<Vector3>(ExOffset.None, 0x10);
+			_scale3D = new ExOffset<Vector3>(ExOffset.None, 0x1C);
 		}
 
 		public Matrix4x4 ToMatrixWithScale()

@@ -56,7 +56,7 @@ namespace ExMemory
 				#region [ Checks ]
 
 				if (offset.Dependency is not null && offset.Dependency.OffsetType != OffsetType.UIntPtr && offset.Dependency != ExOffset.None)
-					throw new ArgumentException("Dependency can only be pointer (UIntPtr) or 'ExternalOffset.None'");
+					throw new ArgumentException("Dependency can only be pointer (UIntPtr) or 'ExOffset.None'");
 				
 				#endregion
 

@@ -6,8 +6,8 @@ namespace ExMemory.ExternalReady.UnrealEngine
 	{
 		#region [ Offsets ]
 
-		protected ExternalOffset<UIntPtr> _stringPointer;
-		protected ExternalOffset<string> _stringData;
+		protected ExOffset<UIntPtr> _stringPointer;
+		protected ExOffset<string> _stringData;
 
 		#endregion
 
@@ -24,8 +24,8 @@ namespace ExMemory.ExternalReady.UnrealEngine
 		{
 			base.InitOffsets();
 
-			_stringPointer = new ExternalOffset<UIntPtr>(0x00);
-			_stringData = new ExternalOffset<string>(_stringPointer, 0x00);
+			_stringPointer = new ExOffset<UIntPtr>(0x00);
+			_stringData = new ExOffset<string>(_stringPointer, 0x00);
 		}
 	}
 }

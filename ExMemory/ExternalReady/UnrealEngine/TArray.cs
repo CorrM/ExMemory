@@ -30,9 +30,9 @@ namespace ExMemory.ExternalReady.UnrealEngine
 
 		#region [ Offsets ]
 
-		protected ExternalOffset<UIntPtr> _data;
-		protected ExternalOffset<int> _count;
-		protected ExternalOffset<int> _max;
+		protected ExOffset<UIntPtr> _data;
+		protected ExOffset<int> _count;
+		protected ExOffset<int> _max;
 
 		#endregion
 
@@ -67,9 +67,9 @@ namespace ExMemory.ExternalReady.UnrealEngine
 			base.InitOffsets();
 
 			int curOff = 0x0;
-			_data = new ExternalOffset<UIntPtr>(ExOffset.None, curOff); curOff += ExMemory.PointerSize;
-			_count = new ExternalOffset<int>(ExOffset.None, curOff); curOff += 0x04;
-			_max = new ExternalOffset<int>(ExOffset.None, curOff);
+			_data = new ExOffset<UIntPtr>(ExOffset.None, curOff); curOff += ExMemory.PointerSize;
+			_count = new ExOffset<int>(ExOffset.None, curOff); curOff += 0x04;
+			_max = new ExOffset<int>(ExOffset.None, curOff);
 		}
 
 		public override bool UpdateData()

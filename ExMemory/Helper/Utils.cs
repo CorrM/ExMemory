@@ -46,7 +46,7 @@ namespace ExMemory.Helper
 			// Get Size Of Data
 			int valueSize = offset.OffsetType switch
 			{
-				OffsetType.String => ExMemorySharp.MaxStringLen,
+				OffsetType.String => ExMemory.MaxStringLen,
 				_ => offset.Size
 			};
 

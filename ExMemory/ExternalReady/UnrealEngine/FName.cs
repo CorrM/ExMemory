@@ -5,8 +5,8 @@ namespace ExMemory.ExternalReady.UnrealEngine
 	public class FName : ExClass
 	{
 		#region Offsets
-		protected ExternalOffset<int> _index;
-		protected ExternalOffset<int> _number;
+		protected ExOffset<int> _index;
+		protected ExOffset<int> _number;
 		#endregion
 
 		#region Props
@@ -22,8 +22,8 @@ namespace ExMemory.ExternalReady.UnrealEngine
 		{
 			base.InitOffsets();
 
-			_index = new ExternalOffset<int>(ExOffset.None, 0x00);
-			_number = new ExternalOffset<int>(ExOffset.None, 0x04);
+			_index = new ExOffset<int>(ExOffset.None, 0x00);
+			_number = new ExOffset<int>(ExOffset.None, 0x04);
 		}
 	}
 }

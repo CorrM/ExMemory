@@ -6,7 +6,7 @@ namespace ExMemory.ExternalReady.UnrealEngine
 	{
 		#region [ Offsets ]
 
-		protected ExternalOffset<byte> _enumVal;
+		protected ExOffset<byte> _enumVal;
 
 		#endregion
 
@@ -23,7 +23,7 @@ namespace ExMemory.ExternalReady.UnrealEngine
 		{
 			base.InitOffsets();
 
-			_enumVal = new ExternalOffset<byte>(ExOffset.None, 0x00);
+			_enumVal = new ExOffset<byte>(ExOffset.None, 0x00);
 		}
 	}
 }

@@ -10,7 +10,7 @@ namespace ExMemory
 		Custom,
 
 		/// <summary>
-		/// DON'T USE, It's For <see cref="ExternalOffset{T}"/> Only
+		/// DON'T USE, It's For <see cref="ExOffset{T}"/> Only
 		/// </summary>
 		ExternalClass,
 
@@ -20,7 +20,7 @@ namespace ExMemory
 
 	public abstract class ExOffset
 	{
-		public static ExOffset None { get; } = new ExternalOffset<byte>(null, 0x0, OffsetType.None);
+		public static ExOffset None { get; } = new ExOffset<byte>(null, 0x0, OffsetType.None);
 
 		#region [ Proparites ]
 
@@ -31,19 +31,19 @@ namespace ExMemory
 		protected MarshalType OffsetMarshalType { get; set; }
 
 		#region [ GenricExternalClass ]
-		 
+
 		/// <summary>
-		/// DON'T USE, IT FOR `<see cref="ExternalOffset{T}"/>` And `<see cref="OffsetType"/>.ExternalClass` Only
+		/// DON'T USE, IT FOR `<see cref="ExOffset{T}"/>` And `<see cref="OffsetType"/>.ExternalClass` Only
 		/// </summary>
 		internal Type ExternalClassType { get; set; }
 
 		/// <summary>
-		/// DON'T USE, IT FOR `<see cref="ExternalOffset{T}"/>` And `<see cref="OffsetType"/>.ExternalClass` Only
+		/// DON'T USE, IT FOR `<see cref="ExOffset{T}"/>` And `<see cref="OffsetType"/>.ExternalClass` Only
 		/// </summary>
 		internal ExClass ExternalClassObject { get; set; }
 
 		/// <summary>
-		/// DON'T USE, IT FOR `<see cref="ExternalOffset{T}"/>` And `<see cref="OffsetType"/>.ExternalClass` Only
+		/// DON'T USE, IT FOR `<see cref="ExOffset{T}"/>` And `<see cref="OffsetType"/>.ExternalClass` Only
 		/// </summary>
 		internal bool ExternalClassIsPointer { get; set; }
 		#endregion
@@ -145,16 +145,16 @@ namespace ExMemory
 		}
 	}
 
-	public sealed class ExternalOffset<T> : ExOffset
+	public sealed class ExOffset<T> : ExOffset
 	{
-		public ExternalOffset(int offset) : this(None, offset) {}
-		internal ExternalOffset(int offset, OffsetType offsetType) : this(None, offset, offsetType) { }
-		public ExternalOffset(int offset, bool externalClassIsPointer) : this(None, offset, externalClassIsPointer) {}
+		public ExOffset(int offset) : this(None, offset) {}
+		internal ExOffset(int offset, OffsetType offsetType) : this(None, offset, offsetType) { }
+		public ExOffset(int offset, bool externalClassIsPointer) : this(None, offset, externalClassIsPointer) {}
 
 		/// <summary>
 		/// For Init Custom Types Like (<see cref="UIntPtr"/>, <see cref="int"/>, <see cref="float"/>, <see cref="string"/>, ..etc)
 		/// </summary>
-		public ExternalOffset(ExOffset dependency, int offset) : this(dependency, offset, OffsetType.Custom)
+		public ExOffset(ExOffset dependency, int offset) : this(dependency, offset, OffsetType.Custom)
 		{
 			if (typeof(T).IsSubclassOf(typeof(ExClass)))
 				throw new InvalidCastException("Use Other Constructor For `ExternalClass` Types.");
@@ -165,7 +165,7 @@ namespace ExMemory
 		/// <summary>
 		/// For Init <see cref="ExClass"/>
 		/// </summary>
-		public ExternalOffset(ExOffset dependency, int offset, bool externalClassIsPointer) : this(dependency, offset, OffsetType.ExternalClass)
+		public ExOffset(ExOffset dependency, int offset, bool externalClassIsPointer) : this(dependency, offset, OffsetType.ExternalClass)
 		{
 			if (!typeof(T).IsSubclassOf(typeof(ExClass)))
 				throw new InvalidCastException("This Constructor For `ExternalClass` Types Only.");
@@ -180,7 +180,7 @@ namespace ExMemory
 		/// <summary>
 		/// Main
 		/// </summary>
-		internal ExternalOffset(ExOffset dependency, int offset, OffsetType offsetType)
+		internal ExOffset(ExOffset dependency, int offset, OffsetType offsetType)
 		{
 			Dependency = dependency;
 			Offset = offset;
@@ -203,7 +203,7 @@ namespace ExMemory
 				OffsetMarshalType = new MarshalType(typeof(UIntPtr));
 				Size = OffsetMarshalType.Size;
 			}
-			else if (thisType.IsSubclassOf(typeof(ExClass)) || thisType.IsSubclassOfRawGeneric(typeof(ExternalOffset<>)))
+			else if (thisType.IsSubclassOf(typeof(ExClass)) || thisType.IsSubclassOfRawGeneric(typeof(ExOffset<>)))
 			{
 				// OffsetType Set On Other Constructor If It's `ExternalClass`
 				if (OffsetType != OffsetType.ExternalClass)
