@@ -32,12 +32,12 @@ namespace ExMemory
 			foreach (ExOffset unrealOffset in unrealOffsets)
 				unrealOffset.RemoveValueAndData();
 		}
-		private static bool ReadBytes(UIntPtr address, uint size, out ReadOnlySpan<byte> bytes)
+		internal static bool ReadBytes(UIntPtr address, uint size, out ReadOnlySpan<byte> bytes)
 		{
 			bytes = ReadOnlySpan<byte>.Empty;
 			return ReadBytesCallBack?.Invoke(address, size, out bytes) ?? false;
 		}
-		private static bool WriteBytes(UIntPtr address, ReadOnlySpan<byte> bytes)
+		internal static bool WriteBytes(UIntPtr address, ReadOnlySpan<byte> bytes)
 		{
 			return WriteBytesCallBack?.Invoke(address, bytes) ?? false;
 		}

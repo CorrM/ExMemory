@@ -87,7 +87,7 @@ namespace ExMemory
 				return false;
 
 			Value = value;
-			return ems.WriteBytes(OffsetAddress, OffsetMarshalType.ObjectToByteArray(Value));
+			return ExMemory.WriteBytes(OffsetAddress, OffsetMarshalType.ObjectToByteArray(Value));
 		}
 
 		internal void SetValueBytes(ReadOnlySpan<byte> fullDependencyBytes)
@@ -104,7 +104,7 @@ namespace ExMemory
 
 				case OffsetType.UIntPtr:
 				case OffsetType.ExternalClass when ExternalClassIsPointer:
-					Value = (UIntPtr)(ExMemorySharp.Is64BitMemory ? (ulong)OffsetMarshalType.ByteArrayToObject(valueBytes) : (uint)OffsetMarshalType.ByteArrayToObject(valueBytes));
+					Value = (UIntPtr)(ExMemory.Is64BitMemory ? (ulong)OffsetMarshalType.ByteArrayToObject(valueBytes) : (uint)OffsetMarshalType.ByteArrayToObject(valueBytes));
 					break;
 
 				case OffsetType.ExternalClass:
@@ -136,8 +136,8 @@ namespace ExMemory
 
 		internal string GetStringFromBytes(ReadOnlySpan<byte> fullDependencyBytes, bool isUnicode)
 		{
-			int len = fullDependencyBytes.Length > (Offset + ExMemorySharp.MaxStringLen)
-				? ExMemorySharp.MaxStringLen
+			int len = fullDependencyBytes.Length > (Offset + ExMemory.MaxStringLen)
+				? ExMemory.MaxStringLen
 				: fullDependencyBytes.Length - Offset;
 
 			ReadOnlySpan<byte> buf = fullDependencyBytes.Slice(Offset, len);

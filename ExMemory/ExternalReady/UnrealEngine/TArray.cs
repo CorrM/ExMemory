@@ -50,7 +50,7 @@ namespace ExMemory.ExternalReady.UnrealEngine
 
 		public TArray(UIntPtr address) : base(address)
 		{
-			_itemSize = ((T)Activator.CreateInstance(typeof(T))).ClassSize;
+			_itemSize = ((T)Activator.CreateInstance(typeof(T)))?.ClassSize ?? throw new NullReferenceException($"Can't create instance of '{typeof(T).Name}'.");
 
 			Items = new List<T>();
 			DelayInfo = new DelayData();
@@ -67,23 +67,23 @@ namespace ExMemory.ExternalReady.UnrealEngine
 			base.InitOffsets();
 
 			int curOff = 0x0;
-			_data = new ExternalOffset<UIntPtr>(ExOffset.None, curOff); curOff += ExMemorySharp.Is64BitMemory ? 0x08 : 0x04;
+			_data = new ExternalOffset<UIntPtr>(ExOffset.None, curOff); curOff += ExMemory.PointerSize;
 			_count = new ExternalOffset<int>(ExOffset.None, curOff); curOff += 0x04;
 			_max = new ExternalOffset<int>(ExOffset.None, curOff);
 		}
 
-		public override bool UpdateData(ExMemorySharp ems)
+		public override bool UpdateData()
 		{
 			// Read Array (Base and Size)
-			if (!Read(ems))
+			if (!Read())
 				return false;
 
 			int counter = 0;
-			int itemSize = ReadInfo.IsPointerToData ? (ExMemorySharp.Is64BitMemory ? 0x08 : 0x04) : _itemSize;
+			int itemSize = ReadInfo.IsPointerToData ? ExMemory.PointerSize : _itemSize;
 			itemSize += ReadInfo.BadSizeAfterEveryItem;
 
 			// Get TArray Data
-			ems.ReadBytes(Data, (uint)(Items.Count * itemSize), out ReadOnlySpan<byte> tArrayData);
+			ExMemory.ReadBytes(Data, (uint)(Items.Count * itemSize), out ReadOnlySpan<byte> tArrayData);
 			int offset = 0;
 
 			foreach (T item in Items)
@@ -92,7 +92,7 @@ namespace ExMemory.ExternalReady.UnrealEngine
 				if (ReadInfo.IsPointerToData)
 				{
 					// Get Item Address (Pointer Value (aka Pointed Address))
-					itemAddress = ExMemorySharp.Is64BitMemory
+					itemAddress = ExMemory.Is64BitMemory
 						? (UIntPtr)MemoryMarshal.Read<ulong>(tArrayData[offset..])
 						: (UIntPtr)MemoryMarshal.Read<uint>(tArrayData[offset..]);
 				}
@@ -106,9 +106,9 @@ namespace ExMemory.ExternalReady.UnrealEngine
 
 				// Set Data
 				if (ReadInfo.IsPointerToData)
-					item.UpdateData(ems);
+					item.UpdateData();
 				else
-					item.UpdateData(ems, tArrayData.Slice(offset, itemSize).ToArray());
+					item.UpdateData(tArrayData.Slice(offset, itemSize).ToArray());
 
 				// Move Offset
 				offset += itemSize;
@@ -127,9 +127,9 @@ namespace ExMemory.ExternalReady.UnrealEngine
 			return true;
 		}
 
-		private bool Read(ExMemorySharp ems)
+		private bool Read()
 		{
-			if (!ems.ReadClass(this, BaseAddress))
+			if (!ExMemory.ReadClass(this, BaseAddress))
 				return false;
 
 			int count = ReadInfo.UseMaxAsReadCount ? Max : Count;
@@ -148,7 +148,7 @@ namespace ExMemory.ExternalReady.UnrealEngine
 				}
 				else if (Items.Count < count)
 				{
-					foreach (int i in Enumerable.Range(Items.Count, count))
+					foreach (int _ in Enumerable.Range(Items.Count, count))
 					{
 						var instance = (T)Activator.CreateInstance(typeof(T));
 						Items.Add(instance);
