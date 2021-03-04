@@ -42,9 +42,9 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 		public DelayData DelayInfo { get; }
 		public ReadData ReadInfo { get; }
 
-		public UIntPtr Data => _data?.Read() ?? UIntPtr.Zero;
-		public int Count => _count?.Read() ?? 0;
-		public int Max => _max?.Read() ?? 0;
+		public UIntPtr Data => _data?.Value ?? UIntPtr.Zero;
+		public int Count => _count?.Value ?? 0;
+		public int Max => _max?.Value ?? 0;
 
 		#endregion
 
@@ -67,9 +67,9 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 			base.InitOffsets();
 
 			int curOff = 0x0;
-			_data = new ExOffset<UIntPtr>(ExOffset.None, curOff); curOff += ExMemory.PointerSize;
-			_count = new ExOffset<int>(ExOffset.None, curOff); curOff += 0x04;
-			_max = new ExOffset<int>(ExOffset.None, curOff);
+			_data = new ExOffset<UIntPtr>(curOff); curOff += ExMemory.PointerSize;
+			_count = new ExOffset<int>(curOff); curOff += 0x04;
+			_max = new ExOffset<int>(curOff);
 		}
 
 		public override bool UpdateData()

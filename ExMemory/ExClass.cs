@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using ExternalMemory.Helper;
+using ExternalMemory.Types;
 
 namespace ExternalMemory
 {
@@ -29,7 +30,7 @@ namespace ExternalMemory
 			if (!Cache.ContainsKey(thisType))
 			{
 				List<FieldInfo> fields = thisType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
-					.Where(f => f.FieldType == typeof(ExOffset) || f.FieldType.IsSubclassOfRawGeneric(typeof(ExOffset<>)))
+					.Where(f => f.FieldType.IsSubclassOfRawGeneric(typeof(ExOffset<>)))
 					.ToList();
 
 				Cache.Add(thisType, fields);
@@ -46,11 +47,11 @@ namespace ExternalMemory
 
 
 					// Set Info
-					curOffset.Name = f.Name;
-					curOffset.Size = curOffset.OffsetType switch
+					//curOffset.Name = f.Name;
+					curOffset.Size = curOffset.OffType switch
 					{
-						OffsetType.UIntPtr => ExMemory.PointerSize,
-						OffsetType.ExternalClass when curOffset.ExternalClassIsPointer => ExMemory.PointerSize,
+						OffsetType.IntPtr => ExMemory.PointerSize,
+						OffsetType.ExClass when curOffset.ExternalType == ExKind.Pointer => ExMemory.PointerSize,
 						_ => curOffset.Size
 					};
 
@@ -59,11 +60,8 @@ namespace ExternalMemory
 				.OrderBy(off => off.Offset)
 				.ToList();
 
-			// Sort By Dependencies
-			Offsets = Offsets.Sort(off => Offsets.Where(offset => offset == off.Dependency));
-
 			// Get Size Of Class
-			ClassSize = Utils.GetDependenciesSize(ExOffset.None, Offsets);
+			ClassSize = Utils.GetClassSize(Offsets);
 		}
 		protected ExClass() : this(UIntPtr.Zero) { }
 

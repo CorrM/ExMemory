@@ -2,6 +2,7 @@
 
 namespace ExternalMemory.ExternalReady
 {
+	/*
 	public class PString : ExClass
 	{
 		#region Offsets
@@ -24,5 +25,5 @@ namespace ExternalMemory.ExternalReady
 			_stringPointer = new ExOffset<UIntPtr>(0x00);
 			_stringData = new ExOffset<string>(_stringPointer, 0x00);
 		}
-	}
+	}*/
 }

@@ -16,17 +16,17 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 		#region Props
 		public Vector4 Rotation
 		{
-			get => _rotation.Read();
+			get => _rotation.Value;
 			set => _rotation.Write(value);
 		}
 		public Vector3 Translation
 		{
-			get => _translation.Read();
+			get => _translation.Value;
 			set => _translation.Write(value);
 		}
 		public Vector3 Scale3D
 		{
-			get => _scale3D.Read();
+			get => _scale3D.Value;
 			set => _scale3D.Write(value);
 		}
 		#endregion
@@ -38,9 +38,9 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 		{
 			base.InitOffsets();
 
-			_rotation = new ExOffset<Vector4>(ExOffset.None, 0x00);
-			_translation = new ExOffset<Vector3>(ExOffset.None, 0x10);
-			_scale3D = new ExOffset<Vector3>(ExOffset.None, 0x1C);
+			_rotation = new ExOffset<Vector4>(0x00);
+			_translation = new ExOffset<Vector3>(0x10);
+			_scale3D = new ExOffset<Vector3>(0x1C);
 		}
 
 		public Matrix4x4 ToMatrixWithScale()

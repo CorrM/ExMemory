@@ -12,7 +12,7 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 
 		#region [ Props ]
 
-		public T Value => (T)(object)_enumVal.Read();
+		public T Value => (T)(object)_enumVal.Value;
 
 		#endregion
 
@@ -23,7 +23,7 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 		{
 			base.InitOffsets();
 
-			_enumVal = new ExOffset<byte>(ExOffset.None, 0x00);
+			_enumVal = new ExOffset<byte>(0x00);
 		}
 	}
 }

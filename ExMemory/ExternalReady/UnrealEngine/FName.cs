@@ -10,8 +10,8 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 		#endregion
 
 		#region Props
-		public int Index => _index.Read();
-		public int Number => _number.Read();
+		public int Index => _index.Value;
+		public int Number => _number.Value;
 		#endregion
 
 		public FName() {}
@@ -22,8 +22,8 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 		{
 			base.InitOffsets();
 
-			_index = new ExOffset<int>(ExOffset.None, 0x00);
-			_number = new ExOffset<int>(ExOffset.None, 0x04);
+			_index = new ExOffset<int>(0x00);
+			_number = new ExOffset<int>(0x04);
 		}
 	}
 }

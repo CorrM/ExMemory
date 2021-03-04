@@ -2,6 +2,7 @@
 
 namespace ExternalMemory.ExternalReady.UnrealEngine
 {
+	/*
 	public class FString : ExClass
 	{
 		#region [ Offsets ]
@@ -28,4 +29,5 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 			_stringData = new ExOffset<string>(_stringPointer, 0x00);
 		}
 	}
+	*/
 }

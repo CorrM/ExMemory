@@ -136,6 +136,7 @@ namespace ExternalMemory.Helper
 		/// <returns>A managed object.</returns>
 		public static object ByteArrayToObject(Type type, ReadOnlySpan<byte> byteArray, int index = 0)
 		{
+			// Todo: https://stackoverflow.com/questions/54537522/copy-byte-array-into-generic-type-without-boxing
 			var mInfo = MarshallerInfo.MakeInfo(type);
 
 			// We'll tried to avoid marshalling as it really slows the process
@@ -213,6 +214,16 @@ namespace ExternalMemory.Helper
 
 			// Return a managed object created from the block of unmanaged memory
 			return unmanaged.Read(type);
+		}
+
+		/// <summary>
+		/// Get size of type.
+		/// </summary>
+		/// <param name="type">Type to get size of.</param>
+		/// <returns>Size of <paramref name="type"/></returns>
+		public static int GetSizeOfType(Type type)
+		{
+			return MarshallerInfo.MakeInfo(type).Size;
 		}
 	}
 }

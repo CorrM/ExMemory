@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using ExternalMemory.Helper;
+using ExternalMemory.Types;
 
 namespace ExternalMemory
 {
@@ -54,105 +54,60 @@ namespace ExternalMemory
 
 			// Read Offsets
 			foreach (ExOffset offset in instance.Offsets)
-			{
-				#region [ Checks ]
+            {
+                offset.OffsetAddress = instance.Address + offset.Offset;
+                offset.ValueBytes = instance.FullClassBytes.Slice(offset.Offset, offset.Size);
+				offset.Value = offset.GetValueFromBytes(offset.ValueBytes.Span);
 
-				if (offset.Dependency is not null && offset.Dependency.OffsetType != OffsetType.UIntPtr && offset.Dependency != ExOffset.None)
-					throw new ArgumentException("Dependency can only be pointer (UIntPtr) or 'ExOffset.None'");
-				
-				#endregion
+                if (offset.OffType != OffsetType.ExClass)
+                    continue;
 
-				#region [ SetValue ]
+				// Nested external class pointer
+				if (offset.ExternalType == ExKind.Pointer)
+                {
+                    // Get Address Of Nested Class
+                    var valPtr = (UIntPtr)offset.Value;
 
-				// if it's Base Offset
-				if (offset.Dependency == ExOffset.None)
+                    offset.AssignDefaultExternalValue();
+					if (offset.Value is not ExClass exOffset)
+                        throw new InvalidOperationException("Can't create instance of 'ExClass'.");
+
+					// Set Class Info
+					exOffset.Address = valPtr;
+
+                    // Null Pointer
+                    if (valPtr == UIntPtr.Zero)
+                        continue;
+
+                    // Read Nested Pointer Class
+                    if (!ReadClass(exOffset))
+                    {
+                        // throw new Exception($"Can't Read `{offset.ExternalClassType.Name}` As `ExternalClass`.", new Exception($"Value Count = {offset.Size}"));
+                        return false;
+                    }
+                }
+
+				// Nested external class instance
+                else
 				{
-					offset.SetValueBytes(instance.FullClassBytes.Span);
-					offset.OffsetAddress = instance.Address + offset.Offset;
-				}
-				else if (offset.Dependency != null && offset.Dependency.DataAssigned)
-				{
-					offset.SetValueBytes(offset.Dependency.FullClassData.Span);
-					offset.OffsetAddress += offset.Offset;
-				}
-				// Dependency Is Null-Pointer OR Bad Pointer Then Just Skip
-				else if (offset.Dependency != null && (offset.Dependency.OffsetType == OffsetType.UIntPtr && !offset.Dependency.DataAssigned))
-				{
-					continue;
-				}
-				else
-				{
-					throw new Exception("Dependency Data Not Set !!");
-				}
+                    if (offset.Value is not ExClass exOffset)
+                        throw new InvalidOperationException("Can't create instance of 'ExClass'.");
 
-				#endregion
+					// Set Class Info
+					exOffset.Address += offset.Offset;
 
-				#region [ Init For Dependencies ]
-
-				// If It's Pointer, Read Pointed Data To Use On Other Offset Dependent On It
-				if (offset.OffsetType == OffsetType.UIntPtr)
-				{
-					// Get Size Of Pointed Data
-					int pointedSize = Utils.GetDependenciesSize(offset, instance.Offsets);
-
-					// If Size Is Zero Then It's Usually Dynamic (Unknown Size) Pointer (Like `Data` Member In `TArray`)
-					// Or Just An Pointer Without Dependencies
-					if (pointedSize == 0)
-						continue;
-
-					// Set Base Address, So i can set correct address for Dependencies offsets `else if (offset.Dependency.DataAssigned)` UP.
-					// So i just need to add offset to that address
-					offset.OffsetAddress = offset.Read<UIntPtr>();
-
-					// Can't Read Bytes
-					if (!ReadBytes(offset.Read<UIntPtr>(), (uint)pointedSize, out ReadOnlySpan<byte> dataBytes))
-						continue;
-
-					offset.SetData(dataBytes);
-				}
-
-				// Nested External Class
-				else if (offset.OffsetType == OffsetType.ExternalClass)
-				{
-					if (offset.ExternalClassIsPointer)
-					{
-						// Get Address Of Nested Class
-						var valPtr = offset.Read<UIntPtr>();
-
-						// Set Class Info
-						offset.ExternalClassObject.Address = valPtr;
-
-						// Null Pointer
-						if (valPtr == UIntPtr.Zero)
-							continue;
-
-						// Read Nested Pointer Class
-						if (!ReadClass(offset.ExternalClassObject))
-						{
-							// throw new Exception($"Can't Read `{offset.ExternalClassType.Name}` As `ExternalClass`.", new Exception($"Value Count = {offset.Size}"));
-							return false;
-						}
-					}
-					else
-					{
-						// Set Class Info
-						offset.ExternalClassObject.Address += offset.Offset;
-
-						// Read Nested Instance Class
-						if (!ReadClass(offset.ExternalClassObject, (byte[])offset.Value))
-						{
-							// throw new Exception($"Can't Read `{offset.ExternalClassType.Name}` As `ExternalClass`.", new Exception($"Value Count = {offset.Size}"));
-							return false;
-						}
-					}
-				}
-
-				#endregion
-			}
+                    // Read Nested Instance Class
+                    if (!ReadClass((T)exOffset, offset.ValueBytes.Span))
+                    {
+                        // throw new Exception($"Can't Read `{offset.ExternalClassType.Name}` As `ExternalClass`.", new Exception($"Value Count = {offset.Size}"));
+                        return false;
+                    }
+                }
+            }
 
 			return true;
 		}
-		public static bool ReadClass<T>(T instance) where T : ExClass
+        internal static bool ReadClass<T>(T instance) where T : ExClass
 		{
 			// Read Full Class
 			if (ReadBytes(instance.Address, (uint) instance.ClassSize, out ReadOnlySpan<byte> fullClassBytes))

@@ -27,32 +27,29 @@ namespace ExternalMemory.Helper
 			return false;
 		}
 
-		internal static int GetDependenciesSize(ExOffset dependency, List<ExOffset> offsets)
+		internal static int GetClassSize(List<ExOffset> offsets)
 		{
-			// If it's Empty, Then It's Usually Dynamic Pointer (Like `Data` Member In `TArray`)
-			List<ExOffset> dOffsets = offsets.Where(off => off.Dependency == dependency).ToList();
-			if (!dOffsets.Any())
+			if (offsets.Count == 0)
 				return 0;
 
 			// Get Biggest Offset
-			int biggestOffset = dOffsets.Max(off => off.Offset);
+			int biggestOffset = offsets.Max(off => off.Offset);
 
 			// Get Biggest Offset in size (Good for unions offsets)
-			int biggestOffSize = dOffsets.Where(off => off.Offset == biggestOffset).Max(off => off.Size);
+			int biggestOffSize = offsets.Where(off => off.Offset == biggestOffset).Max(off => off.Size);
 
 			// Get Offset
-			ExOffset offset = offsets.Find(off => off.Dependency == dependency && off.Offset == biggestOffset && off.Size == biggestOffSize);
+			ExOffset offset = offsets.Find(off => off.Offset == biggestOffset && off.Size == biggestOffSize);
+			if (offset is null)
+				throw new NullReferenceException("'offset' can not be null.");
 
-			// Get Size Of Data
-			int valueSize = offset.OffsetType switch
-			{
-				OffsetType.String => ExMemory.MaxStringLen,
-				_ => offset.Size
-			};
-
-			return biggestOffset + valueSize;
+			return biggestOffset + offset.Size;
 		}
 
+		public static string GetStringFromBytes(ReadOnlySpan<byte> bytes, bool isUnicode)
+		{
+			return Utils.BytesToString(bytes, isUnicode).Split('\0')[0];
+		}
 		public static byte[] StringToBytes(string str, bool isUnicode)
 		{
 			return isUnicode ? Encoding.Unicode.GetBytes(str) : Encoding.ASCII.GetBytes(str);
