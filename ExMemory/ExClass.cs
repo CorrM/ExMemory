@@ -14,11 +14,11 @@ namespace ExternalMemory
 		internal int ClassSize { get; }
 		internal ReadOnlyMemory<byte> FullClassBytes { get; set; }
 
-		public UIntPtr BaseAddress { get; set; }
+		public UIntPtr Address { get; set; }
 
 		protected ExClass(UIntPtr address)
 		{
-			BaseAddress = address;
+			Address = address;
 
 			// ReSharper disable once VirtualMemberCallInConstructor
 			InitOffsets();
@@ -77,7 +77,7 @@ namespace ExternalMemory
 		/// </summary>
 		public virtual bool UpdateData()
 		{
-			return BaseAddress != UIntPtr.Zero && ExMemory.ReadClass(this);
+			return Address != UIntPtr.Zero && ExMemory.ReadClass(this);
 		}
 
 		/// <summary>
@@ -88,7 +88,7 @@ namespace ExternalMemory
 		public virtual bool UpdateData(ReadOnlyMemory<byte> fullClassBytes)
 		{
 			FullClassBytes = fullClassBytes;
-			return BaseAddress != UIntPtr.Zero && ExMemory.ReadClass(this, fullClassBytes.Span);
+			return Address != UIntPtr.Zero && ExMemory.ReadClass(this, fullClassBytes.Span);
 		}
 	}
 }

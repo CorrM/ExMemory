@@ -98,11 +98,11 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 				}
 				else
 				{
-					itemAddress = this.BaseAddress + offset;
+					itemAddress = this.Address + offset;
 				}
 
 				// Update current item
-				item.BaseAddress = itemAddress;
+				item.Address = itemAddress;
 
 				// Set Data
 				if (ReadInfo.IsPointerToData)
@@ -170,7 +170,7 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 			if (count == 0 /*&& !Read()*/)
 				return false;
 
-			return (Max > Count) && BaseAddress != UIntPtr.Zero;
+			return (Max > Count) && Address != UIntPtr.Zero;
 		}
 
 		#region Indexer

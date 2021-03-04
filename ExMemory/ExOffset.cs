@@ -18,6 +18,12 @@ namespace ExternalMemory
 		String
 	}
 
+	public enum ExType
+	{
+		Instance,
+		Pointer
+	}
+
 	public abstract class ExOffset
 	{
 		public static ExOffset None { get; } = new ExOffset<byte>(null, 0x0, OffsetType.None);
@@ -28,7 +34,7 @@ namespace ExternalMemory
 		public ExOffset Dependency { get; protected set; }
 		public int Offset { get; protected set; }
 		public OffsetType OffsetType { get; protected set; }
-		protected MarshalType OffsetMarshalType { get; set; }
+		internal MarshalType OffsetMarshalType { get; set; }
 
 		#region [ GenricExternalClass ]
 
@@ -61,7 +67,7 @@ namespace ExternalMemory
 		/// <summary>
 		/// Offset Value As Object
 		/// </summary>
-		internal object Value { get; set; }
+		public object Value { get; internal set; }
 
 		/// <summary>
 		/// If Offset Is Pointer Then We Need A Place To Store
@@ -147,9 +153,11 @@ namespace ExternalMemory
 
 	public sealed class ExOffset<T> : ExOffset
 	{
+		public new T Value => (T)(object)base.ExternalClassObject;
+
 		public ExOffset(int offset) : this(None, offset) {}
 		internal ExOffset(int offset, OffsetType offsetType) : this(None, offset, offsetType) { }
-		public ExOffset(int offset, bool externalClassIsPointer) : this(None, offset, externalClassIsPointer) {}
+		public ExOffset(int offset, ExType classType) : this(None, offset, classType) {}
 
 		/// <summary>
 		/// For Init Custom Types Like (<see cref="UIntPtr"/>, <see cref="int"/>, <see cref="float"/>, <see cref="string"/>, ..etc)
@@ -165,13 +173,13 @@ namespace ExternalMemory
 		/// <summary>
 		/// For Init <see cref="ExClass"/>
 		/// </summary>
-		public ExOffset(ExOffset dependency, int offset, bool externalClassIsPointer) : this(dependency, offset, OffsetType.ExternalClass)
+		public ExOffset(ExOffset dependency, int offset, ExType classType) : this(dependency, offset, OffsetType.ExternalClass)
 		{
 			if (!typeof(T).IsSubclassOf(typeof(ExClass)))
 				throw new InvalidCastException("This Constructor For `ExternalClass` Types Only.");
 
 			ExternalClassType = typeof(T);
-			ExternalClassIsPointer = externalClassIsPointer;
+			ExternalClassIsPointer = classType == ExType.Pointer;
 			ExternalClassObject = (ExClass)Activator.CreateInstance(ExternalClassType);
 
 			Init();

@@ -67,7 +67,7 @@ namespace ExternalMemory
 				if (offset.Dependency == ExOffset.None)
 				{
 					offset.SetValueBytes(instance.FullClassBytes.Span);
-					offset.OffsetAddress = instance.BaseAddress + offset.Offset;
+					offset.OffsetAddress = instance.Address + offset.Offset;
 				}
 				else if (offset.Dependency != null && offset.Dependency.DataAssigned)
 				{
@@ -119,7 +119,7 @@ namespace ExternalMemory
 						var valPtr = offset.Read<UIntPtr>();
 
 						// Set Class Info
-						offset.ExternalClassObject.BaseAddress = valPtr;
+						offset.ExternalClassObject.Address = valPtr;
 
 						// Null Pointer
 						if (valPtr == UIntPtr.Zero)
@@ -135,7 +135,7 @@ namespace ExternalMemory
 					else
 					{
 						// Set Class Info
-						offset.ExternalClassObject.BaseAddress += offset.Offset;
+						offset.ExternalClassObject.Address += offset.Offset;
 
 						// Read Nested Instance Class
 						if (!ReadClass(offset.ExternalClassObject, (byte[])offset.Value))
@@ -154,7 +154,7 @@ namespace ExternalMemory
 		public static bool ReadClass<T>(T instance) where T : ExClass
 		{
 			// Read Full Class
-			if (ReadBytes(instance.BaseAddress, (uint) instance.ClassSize, out ReadOnlySpan<byte> fullClassBytes))
+			if (ReadBytes(instance.Address, (uint) instance.ClassSize, out ReadOnlySpan<byte> fullClassBytes))
 				return ReadClass(instance, fullClassBytes);
 
 			// Clear All Class Offset
