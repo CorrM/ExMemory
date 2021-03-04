@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using ExternalMemory.Helper;
-using ExternalMemory.Types;
 
 namespace ExternalMemory
 {
@@ -26,7 +25,7 @@ namespace ExternalMemory
 
 			Type thisType = this.GetType();
 
-			// Cache offsets
+			// Cache offsets field info
 			if (!Cache.ContainsKey(thisType))
 			{
 				List<FieldInfo> fields = thisType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
@@ -43,17 +42,7 @@ namespace ExternalMemory
 					var curOffset = (ExOffset)f.GetValue(this);
 
 					if (curOffset is null)
-						throw new NullReferenceException($"ExOffset can't be null, Offset name '{f.Name}'.");
-
-
-					// Set Info
-					//curOffset.Name = f.Name;
-					curOffset.Size = curOffset.OffType switch
-					{
-						OffsetType.IntPtr => ExMemory.PointerSize,
-						OffsetType.ExClass when curOffset.ExternalType == ExKind.Pointer => ExMemory.PointerSize,
-						_ => curOffset.Size
-					};
+						throw new NullReferenceException($"ExOffset can't be null, Offset name '{f.DeclaringType?.Name}.{f.Name}'.");
 
 					return curOffset;
 				})

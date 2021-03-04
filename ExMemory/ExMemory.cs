@@ -54,60 +54,62 @@ namespace ExternalMemory
 
 			// Read Offsets
 			foreach (ExOffset offset in instance.Offsets)
-            {
-                offset.OffsetAddress = instance.Address + offset.Offset;
-                offset.ValueBytes = instance.FullClassBytes.Slice(offset.Offset, offset.Size);
-				offset.Value = offset.GetValueFromBytes(offset.ValueBytes.Span);
+			{
+				offset.OffsetAddress = instance.Address + offset.Offset;
+				offset.ValueBytes = instance.FullClassBytes.Slice(offset.Offset, offset.Size);
 
-                if (offset.OffType != OffsetType.ExClass)
-                    continue;
+				if (offset.OffType != OffsetType.ExClass)
+				{
+					offset.Value = offset.GetValueFromBytes(offset.ValueBytes.Span);
+					continue;
+				}
 
 				// Nested external class pointer
 				if (offset.ExternalType == ExKind.Pointer)
-                {
-                    // Get Address Of Nested Class
-                    var valPtr = (UIntPtr)offset.Value;
+				{
+					// Pointer read as IntPtr,
+					var valPtr = (UIntPtr)offset.GetValueFromBytes(offset.ValueBytes.Span);
 
-                    offset.AssignDefaultExternalValue();
+					// offset.AssignDefaultExternalValue();
 					if (offset.Value is not ExClass exOffset)
-                        throw new InvalidOperationException("Can't create instance of 'ExClass'.");
+						throw new InvalidOperationException($"Can't create instance of '{offset.GetType().Name}'.");
 
 					// Set Class Info
 					exOffset.Address = valPtr;
 
-                    // Null Pointer
-                    if (valPtr == UIntPtr.Zero)
-                        continue;
+					// Null Pointer
+					if (valPtr == UIntPtr.Zero)
+						continue;
 
-                    // Read Nested Pointer Class
-                    if (!ReadClass(exOffset))
-                    {
-                        // throw new Exception($"Can't Read `{offset.ExternalClassType.Name}` As `ExternalClass`.", new Exception($"Value Count = {offset.Size}"));
-                        return false;
-                    }
-                }
+					// Read Nested Pointer Class
+					if (!ReadClass(exOffset))
+					{
+						// throw new Exception($"Can't Read `{offset.ExternalClassType.Name}` As `ExternalClass`.", new Exception($"Value Count = {offset.Size}"));
+						return false;
+					}
+				}
 
 				// Nested external class instance
-                else
+				else
 				{
-                    if (offset.Value is not ExClass exOffset)
-                        throw new InvalidOperationException("Can't create instance of 'ExClass'.");
+					if (offset.Value is not ExClass exOffset)
+						throw new InvalidOperationException($"Can't create instance of '{offset.GetType().Name}'.");
 
 					// Set Class Info
 					exOffset.Address += offset.Offset;
 
-                    // Read Nested Instance Class
-                    if (!ReadClass((T)exOffset, offset.ValueBytes.Span))
-                    {
-                        // throw new Exception($"Can't Read `{offset.ExternalClassType.Name}` As `ExternalClass`.", new Exception($"Value Count = {offset.Size}"));
-                        return false;
-                    }
-                }
-            }
+					// Read Nested Instance Class
+					if (!ReadClass((T)exOffset, offset.ValueBytes.Span))
+					{
+						// throw new Exception($"Can't Read `{offset.ExternalClassType.Name}` As `ExternalClass`.", new Exception($"Value Count = {offset.Size}"));
+						return false;
+					}
+				}
+			}
 
 			return true;
 		}
-        internal static bool ReadClass<T>(T instance) where T : ExClass
+		internal static bool ReadClass<T>(T instance) where T : ExClass
 		{
 			// Read Full Class
 			if (ReadBytes(instance.Address, (uint) instance.ClassSize, out ReadOnlySpan<byte> fullClassBytes))

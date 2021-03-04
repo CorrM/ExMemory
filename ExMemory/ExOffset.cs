@@ -19,11 +19,6 @@ namespace ExternalMemory
 		public int Size { get; internal set; }
 		public ReadOnlyMemory<byte> ValueBytes { get; internal set; }
 
-		internal void RemoveValueAndData()
-		{
-			Value = default;
-			ValueBytes = ReadOnlyMemory<byte>.Empty;
-		}
 		internal object GetValueFromBytes(ReadOnlySpan<byte> offsetBytes)
 		{
 			switch (OffType)
@@ -41,11 +36,16 @@ namespace ExternalMemory
 					return Helper.MarshalType.ByteArrayToObject(MarshalType, offsetBytes);
 			}
 		}
-        internal void AssignDefaultExternalValue()
+        internal void RemoveValueAndData()
         {
-            Value = Activator.CreateInstance(ExternalValueType);
+            Value = default;
+            ValueBytes = ReadOnlyMemory<byte>.Empty;
         }
-    }
+		internal void AssignDefaultExternalValue()
+		{
+			Value = Activator.CreateInstance(ExternalValueType);
+		}
+	}
 
 	public sealed class ExOffset<T> : ExOffset
 	{
@@ -53,7 +53,6 @@ namespace ExternalMemory
 
 		private ExOffset(int offset, OffsetType offType, ExKind exType)
 		{
-			base.Value = default;
 			Offset = offset;
 			OffType = offType;
 			ExternalType = exType;
@@ -79,7 +78,8 @@ namespace ExternalMemory
 			{
 				OffType = OffsetType.IntPtr;
 				MarshalType = typeof(UIntPtr);
-				Size = Helper.MarshalType.GetSizeOfType(MarshalType);
+				Size = ExMemory.PointerSize;
+				base.Value = default;
 			}
 			else if (thisType.IsSubclassOf(typeof(ExClass)) || thisType.IsSubclassOfRawGeneric(typeof(ExOffset<>)))
 			{
@@ -89,15 +89,14 @@ namespace ExternalMemory
 
 				MarshalType = ExternalType == ExKind.Pointer ? typeof(UIntPtr) : thisType;
 				ExternalValueType = thisType;
-
-				// If ExternalType == ExKind.Pointer, ExClass Will Fix The Size Before Calc Class Size
-				// So It's Okay To Leave It Like That
-				Size = -1;
+				base.Value = Activator.CreateInstance<T>();
+				Size = ExternalType == ExKind.Pointer ? ExMemory.PointerSize : ((ExClass)base.Value).ClassSize;
 			}
 			else
 			{
 				MarshalType = thisType;
 				Size = Marshal.SizeOf<T>();
+				base.Value = default;
 			}
 		}
 		public bool Write(T value)
