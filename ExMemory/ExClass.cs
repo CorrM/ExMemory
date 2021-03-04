@@ -77,7 +77,7 @@ namespace ExternalMemory
 		/// </summary>
 		public virtual bool UpdateData()
 		{
-			return Address != UIntPtr.Zero && ExMemory.ReadClass(this);
+			return ExMemory.IsInit && Address != UIntPtr.Zero && ExMemory.ReadClass(this);
 		}
 
 		/// <summary>

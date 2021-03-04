@@ -13,9 +13,9 @@ namespace ExternalMemory
 
 		#endregion
 
+		public static bool IsInit { get; private set; }
 		public static ReadCallBack ReadBytesCallBack { get; private set; }
 		public static WriteCallBack WriteBytesCallBack { get; private set; }
-		public static int MaxStringLen { get; set; } = 64;
 		public static bool Is64BitMemory { get; private set; }
 		public static int PointerSize { get; private set; }
 
@@ -25,6 +25,7 @@ namespace ExternalMemory
 			WriteBytesCallBack = writeBytesDelegate;
 			Is64BitMemory = is64BitMemory;
 			PointerSize = Is64BitMemory ? 0x8 : 0x4;
+			IsInit = true;
 		}
 
 		private static void RemoveValueData(IEnumerable<ExOffset> unrealOffsets)
@@ -161,8 +162,5 @@ namespace ExternalMemory
 			RemoveValueData(instance.Offsets);
 			return false;
 		}
-
-		public static bool ReadClass<T>(T instance, int address) where T : ExClass => ReadClass(instance);
-		public static bool ReadClass<T>(T instance, long address) where T : ExClass => ReadClass(instance);
 	}
 }

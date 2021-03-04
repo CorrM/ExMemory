@@ -6,18 +6,11 @@ namespace ExternalMemory
 {
 	public enum OffsetType
 	{
-		None,
-		Custom,
-
-		/// <summary>
-		/// DON'T USE, It's For <see cref="ExOffset{T}"/> Only
-		/// </summary>
-		ExternalClass,
-
-		UIntPtr,
+		ValueType,
+		ExClass,
+		IntPtr,
 		String
 	}
-
 	public enum ExType
 	{
 		Instance,
@@ -151,48 +144,42 @@ namespace ExternalMemory
 		}
 	}
 
-	public sealed class ExOffset<T> : ExOffset
+	public sealed class ExOffset<T> where T : new()
 	{
-		public new T Value => (T)(object)base.ExternalClassObject;
+		private MarshalType OffsetMarshalType { get; set; }
 
-		public ExOffset(int offset) : this(None, offset) {}
-		internal ExOffset(int offset, OffsetType offsetType) : this(None, offset, offsetType) { }
-		public ExOffset(int offset, ExType classType) : this(None, offset, classType) {}
+		public UIntPtr OffsetAddress { get; internal set; }
+		public int Offset { get; }
+		public OffsetType OffType { get; }
+		public ExType ExternalType { get; }
+		public T Value { get; }
 
-		/// <summary>
-		/// For Init Custom Types Like (<see cref="UIntPtr"/>, <see cref="int"/>, <see cref="float"/>, <see cref="string"/>, ..etc)
-		/// </summary>
-		public ExOffset(ExOffset dependency, int offset) : this(dependency, offset, OffsetType.Custom)
-		{
-			if (typeof(T).IsSubclassOf(typeof(ExClass)))
-				throw new InvalidCastException("Use Other Constructor For `ExternalClass` Types.");
-
-			Init();
-		}
-
-		/// <summary>
-		/// For Init <see cref="ExClass"/>
-		/// </summary>
-		public ExOffset(ExOffset dependency, int offset, ExType classType) : this(dependency, offset, OffsetType.ExternalClass)
+		private ExOffset(int offset, OffsetType offType, ExType classType)
 		{
 			if (!typeof(T).IsSubclassOf(typeof(ExClass)))
 				throw new InvalidCastException("This Constructor For `ExternalClass` Types Only.");
 
-			ExternalClassType = typeof(T);
-			ExternalClassIsPointer = classType == ExType.Pointer;
-			ExternalClassObject = (ExClass)Activator.CreateInstance(ExternalClassType);
+			Value = new T();
+			Offset = offset;
+			OffType = offType;
+			ExternalType = classType;
 
 			Init();
 		}
 
-		/// <summary>
-		/// Main
-		/// </summary>
-		internal ExOffset(ExOffset dependency, int offset, OffsetType offsetType)
+		public ExOffset(int offset, ExType classType) : this(offset, OffsetType.ExClass, classType)
 		{
-			Dependency = dependency;
-			Offset = offset;
-			OffsetType = offsetType;
+			if (!typeof(T).IsSubclassOf(typeof(ExClass)))
+				throw new InvalidCastException("This Constructor For `ExternalClass` Types Only.");
+		}
+
+		/// <summary>
+		/// For Init Custom Types Like (<see cref="UIntPtr"/>, <see cref="int"/>, <see cref="float"/>, <see cref="string"/>, ..etc)
+		/// </summary>
+		public ExOffset(int offset) : this(offset, OffsetType.ValueType, ExType.Instance)
+		{
+			if (typeof(T).IsSubclassOf(typeof(ExClass)))
+				throw new InvalidCastException("Use Other Constructor For `ExternalClass` Types.");
 		}
 
 		private void Init()

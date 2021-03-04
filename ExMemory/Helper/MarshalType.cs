@@ -5,76 +5,80 @@ using System.Text;
 
 namespace ExternalMemory.Helper
 {
-	/// <summary>
-	/// Static class providing tools for extracting information related to types.
-	/// </summary>
-	public class MarshalType
+	internal readonly ref struct MarshallerInfo
 	{
 		/// <summary>
 		/// Gets if the type can be stored in a registers (for example ACX, ECX, ...).
 		/// </summary>
-		public bool CanBeStoredInRegisters { get; }
+		public bool CanBeStoredInRegisters { get; init; }
+
 		/// <summary>
 		/// State if the type is <see cref="IntPtr"/>.
 		/// </summary>
-		public bool IsIntPtr { get; }
-		/// <summary>
-		/// The real type.
-		/// </summary>
-		public Type RealType { get; }
+		public bool IsIntPtr { get; init; }
+
 		/// <summary>
 		/// The size of the type.
 		/// </summary>
-		public int Size { get; }
+		public int Size { get; init; }
+
 		/// <summary>
 		/// The TypeCode of the type.
 		/// </summary>
-		public TypeCode TypeCode { get; }
+		public TypeCode TypeCode { get; init; }
 
-		/// <summary>
-		/// Initializes static information related to the specified type.
-		/// </summary>
-		public MarshalType(Type type)
+		public static MarshallerInfo MakeInfo(Type type)
 		{
-			// Gather information related to the provided type
-			IsIntPtr = type == typeof(IntPtr);
-			RealType = type;
-			Size = TypeCode == TypeCode.Boolean ? 1 : Marshal.SizeOf(RealType);
-			TypeCode = Type.GetTypeCode(RealType);
+			bool isIntPtr = type == typeof(IntPtr);
+			TypeCode typeCode = Type.GetTypeCode(type);
+			bool canBeStoredInRegisters = isIntPtr
+										  || typeCode == TypeCode.Int64
+										  || typeCode == TypeCode.UInt64
+										  || typeCode == TypeCode.Boolean
+										  || typeCode == TypeCode.Byte
+										  || typeCode == TypeCode.Char
+										  || typeCode == TypeCode.Int16
+										  || typeCode == TypeCode.Int32
+										  || typeCode == TypeCode.SByte
+										  || typeCode == TypeCode.Single
+										  || typeCode == TypeCode.UInt16
+										  || typeCode == TypeCode.UInt32;
 
-			// Check if the type can be stored in registers
-			CanBeStoredInRegisters = IsIntPtr
-									 || TypeCode == TypeCode.Int64
-									 || TypeCode == TypeCode.UInt64
-									 || TypeCode == TypeCode.Boolean
-									 || TypeCode == TypeCode.Byte
-									 || TypeCode == TypeCode.Char
-									 || TypeCode == TypeCode.Int16
-									 || TypeCode == TypeCode.Int32
-									 || TypeCode == TypeCode.Int64
-									 || TypeCode == TypeCode.SByte
-									 || TypeCode == TypeCode.Single
-									 || TypeCode == TypeCode.UInt16
-									 || TypeCode == TypeCode.UInt32;
+			return new MarshallerInfo()
+			{
+				IsIntPtr = isIntPtr,
+				TypeCode = typeCode,
+				CanBeStoredInRegisters = canBeStoredInRegisters,
+				Size = typeCode == TypeCode.Boolean ? 1 : Marshal.SizeOf(type)
+			};
 		}
+	}
 
+	/// <summary>
+	/// Static class providing tools for extracting information related to types.
+	/// </summary>
+	public static class MarshalType
+	{
 		/// <summary>
 		/// Marshals a managed object to an array of bytes.
 		/// </summary>
+		/// <param name="type">Type to convert to byte array</param>
 		/// <param name="obj">The object to marshal.</param>
 		/// <returns>A array of bytes corresponding to the managed object.</returns>
-		public ReadOnlySpan<byte> ObjectToByteArray(object obj)
+		public static ReadOnlySpan<byte> ObjectToByteArray(Type type, object obj)
 		{
+			var mInfo = MarshallerInfo.MakeInfo(type);
+
 			// We'll tried to avoid marshalling as it really slows the process
 			// First, check if the type can be converted without marshalling
 			try
 			{
-				switch (TypeCode)
+				switch (mInfo.TypeCode)
 				{
 					case TypeCode.Object:
-						if (IsIntPtr)
+						if (mInfo.IsIntPtr)
 						{
-							switch (Size)
+							switch (mInfo.Size)
 							{
 								case 4:
 									return BitConverter.GetBytes(((IntPtr)obj).ToInt32());
@@ -114,7 +118,7 @@ namespace ExternalMemory.Helper
 			
 			// Check if it's not a common type
 			// Allocate a block of unmanaged memory
-			using var unmanaged = new LocalUnmanagedMemory(Size);
+			using var unmanaged = new LocalUnmanagedMemory(mInfo.Size);
 
 			// Write the object inside the unmanaged memory
 			unmanaged.Write(obj);
@@ -126,20 +130,22 @@ namespace ExternalMemory.Helper
 		/// <summary>
 		/// Marshals an array of byte to a managed object.
 		/// </summary>
+		/// <param name="type">Type to convert from byte array</param>
 		/// <param name="byteArray">The array of bytes corresponding to a managed object.</param>
 		/// <param name="index">[Optional] Where to start the conversion of bytes to the managed object.</param>
 		/// <returns>A managed object.</returns>
-		public object ByteArrayToObject(ReadOnlySpan<byte> byteArray, int index = 0)
+		public static object ByteArrayToObject(Type type, ReadOnlySpan<byte> byteArray, int index = 0)
 		{
+			var mInfo = MarshallerInfo.MakeInfo(type);
+
 			// We'll tried to avoid marshalling as it really slows the process
 			// First, check if the type can be converted without marshalling
-
 			try
 			{
-				switch (TypeCode)
+				switch (mInfo.TypeCode)
 				{
 					case TypeCode.Object:
-						if (IsIntPtr)
+						if (mInfo.IsIntPtr)
 						{
 							switch (byteArray.Length)
 							{
@@ -154,9 +160,6 @@ namespace ExternalMemory.Helper
 
 								case 8:
 									return new IntPtr(BitConverter.ToInt64(byteArray[index..]));
-
-								default:
-									break;
 							}
 						}
 						break;
@@ -203,13 +206,13 @@ namespace ExternalMemory.Helper
 			}
 
 			// Allocate a block of unmanaged memory
-			using var unmanaged = new LocalUnmanagedMemory(Size);
+			using var unmanaged = new LocalUnmanagedMemory(mInfo.Size);
 
 			// Write the array of bytes inside the unmanaged memory
 			unmanaged.Write(byteArray, index);
 
 			// Return a managed object created from the block of unmanaged memory
-			return unmanaged.Read(RealType);
+			return unmanaged.Read(type);
 		}
 	}
 }
