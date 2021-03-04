@@ -47,7 +47,7 @@ namespace ExternalMemory
         }
     }
 
-	public sealed class ExOffset<T> : ExOffset where T : new()
+	public sealed class ExOffset<T> : ExOffset
 	{
 		public new T Value => (T)base.Value;
 
