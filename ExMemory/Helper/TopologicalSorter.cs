@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ExMemory.Helper
+namespace ExternalMemory.Helper
 {
     public static class TopologicalSorter
     {
@@ -45,5 +45,4 @@ namespace ExMemory.Helper
             }
         }
     }
-
 }

@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace ExMemory.Helper
+namespace ExternalMemory.Helper
 {
 	/// <summary>
 	/// Static class providing tools for extracting information related to types.

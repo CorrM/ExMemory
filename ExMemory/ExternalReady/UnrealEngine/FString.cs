@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ExMemory.ExternalReady.UnrealEngine
+namespace ExternalMemory.ExternalReady.UnrealEngine
 {
 	public class FString : ExClass
 	{

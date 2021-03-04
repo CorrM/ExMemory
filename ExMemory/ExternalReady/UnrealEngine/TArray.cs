@@ -4,7 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-namespace ExMemory.ExternalReady.UnrealEngine
+namespace ExternalMemory.ExternalReady.UnrealEngine
 {
 	// ReSharper disable once InconsistentNaming
 	/// <summary>
@@ -129,7 +129,7 @@ namespace ExMemory.ExternalReady.UnrealEngine
 
 		private bool Read()
 		{
-			if (!ExMemory.ReadClass(this, BaseAddress))
+			if (!ExMemory.ReadClass(this))
 				return false;
 
 			int count = ReadInfo.UseMaxAsReadCount ? Max : Count;

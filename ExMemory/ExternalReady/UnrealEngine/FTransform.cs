@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Numerics;
 
-namespace ExMemory.ExternalReady.UnrealEngine
+namespace ExternalMemory.ExternalReady.UnrealEngine
 {
 	public class FTransform : ExClass
 	{
@@ -17,17 +17,17 @@ namespace ExMemory.ExternalReady.UnrealEngine
 		public Vector4 Rotation
 		{
 			get => _rotation.Read();
-			set => WriteOffset(_rotation, value);
+			set => _rotation.Write(value);
 		}
 		public Vector3 Translation
 		{
 			get => _translation.Read();
-			set => WriteOffset(_translation, value);
+			set => _translation.Write(value);
 		}
 		public Vector3 Scale3D
 		{
 			get => _scale3D.Read();
-			set => WriteOffset(_scale3D, value);
+			set => _scale3D.Write(value);
 		}
 		#endregion
 		

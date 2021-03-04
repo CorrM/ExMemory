@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ExMemory.ExternalReady
+namespace ExternalMemory.ExternalReady
 {
 	public class PString : ExClass
 	{

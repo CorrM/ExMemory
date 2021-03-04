@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace ExMemory.Helper
+namespace ExternalMemory.Helper
 {
     public struct LocalUnmanagedMemory : IDisposable
     {

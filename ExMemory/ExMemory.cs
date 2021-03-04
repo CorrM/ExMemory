@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using ExMemory.Helper;
+using ExternalMemory.Helper;
 
-namespace ExMemory
+namespace ExternalMemory
 {
 	public static class ExMemory
 	{
 		#region [ Delegates ]
 
-		public delegate bool ReadCallBack(UIntPtr address, ulong size, out ReadOnlySpan<byte> bytes);
+		public delegate bool ReadCallBack(UIntPtr address, uint size, out ReadOnlySpan<byte> bytes);
 		public delegate bool WriteCallBack(UIntPtr address, ReadOnlySpan<byte> bytes);
 
 		#endregion
@@ -35,6 +35,10 @@ namespace ExMemory
 		internal static bool ReadBytes(UIntPtr address, uint size, out ReadOnlySpan<byte> bytes)
 		{
 			bytes = ReadOnlySpan<byte>.Empty;
+
+			if (address == UIntPtr.Zero)
+				return false;
+
 			return ReadBytesCallBack?.Invoke(address, size, out bytes) ?? false;
 		}
 		internal static bool WriteBytes(UIntPtr address, ReadOnlySpan<byte> bytes)
@@ -42,16 +46,13 @@ namespace ExMemory
 			return WriteBytesCallBack?.Invoke(address, bytes) ?? false;
 		}
 
-		internal static bool ReadClass<T>(T instance, UIntPtr address, ReadOnlySpan<byte> fullClassBytes) where T : ExClass
+		internal static bool ReadClass<T>(T instance, ReadOnlySpan<byte> fullClassBytes) where T : ExClass
 		{
-			// Collect Offsets
-			List<ExOffset> allOffsets = instance.Offsets;
-
 			// Set Bytes
 			instance.FullClassBytes = fullClassBytes.ToArray();
 
 			// Read Offsets
-			foreach (ExOffset offset in allOffsets)
+			foreach (ExOffset offset in instance.Offsets)
 			{
 				#region [ Checks ]
 
@@ -66,7 +67,7 @@ namespace ExMemory
 				if (offset.Dependency == ExOffset.None)
 				{
 					offset.SetValueBytes(instance.FullClassBytes.Span);
-					offset.OffsetAddress = address + offset.Offset;
+					offset.OffsetAddress = instance.BaseAddress + offset.Offset;
 				}
 				else if (offset.Dependency != null && offset.Dependency.DataAssigned)
 				{
@@ -91,7 +92,7 @@ namespace ExMemory
 				if (offset.OffsetType == OffsetType.UIntPtr)
 				{
 					// Get Size Of Pointed Data
-					int pointedSize = Utils.GetDependenciesSize(offset, allOffsets);
+					int pointedSize = Utils.GetDependenciesSize(offset, instance.Offsets);
 
 					// If Size Is Zero Then It's Usually Dynamic (Unknown Size) Pointer (Like `Data` Member In `TArray`)
 					// Or Just An Pointer Without Dependencies
@@ -125,7 +126,7 @@ namespace ExMemory
 							continue;
 
 						// Read Nested Pointer Class
-						if (!ReadClass(offset.ExternalClassObject, valPtr))
+						if (!ReadClass(offset.ExternalClassObject))
 						{
 							// throw new Exception($"Can't Read `{offset.ExternalClassType.Name}` As `ExternalClass`.", new Exception($"Value Count = {offset.Size}"));
 							return false;
@@ -133,13 +134,11 @@ namespace ExMemory
 					}
 					else
 					{
-						UIntPtr nestedAddress = address + offset.Offset;
-
 						// Set Class Info
-						offset.ExternalClassObject.BaseAddress = nestedAddress;
+						offset.ExternalClassObject.BaseAddress += offset.Offset;
 
 						// Read Nested Instance Class
-						if (!ReadClass(offset.ExternalClassObject, nestedAddress, (byte[])offset.Value))
+						if (!ReadClass(offset.ExternalClassObject, (byte[])offset.Value))
 						{
 							// throw new Exception($"Can't Read `{offset.ExternalClassType.Name}` As `ExternalClass`.", new Exception($"Value Count = {offset.Size}"));
 							return false;
@@ -152,25 +151,18 @@ namespace ExMemory
 
 			return true;
 		}
-		public static bool ReadClass<T>(T instance, UIntPtr address) where T : ExClass
+		public static bool ReadClass<T>(T instance) where T : ExClass
 		{
-			if (address.ToUInt64() <= 0)
-			{
-				// Clear All Class Offset
-				RemoveValueData(instance.Offsets);
-				return false;
-			}
-
 			// Read Full Class
-			if (ReadBytes(address, (uint)instance.ClassSize, out ReadOnlySpan<byte> fullClassBytes))
-				return ReadClass(instance, address, fullClassBytes);
+			if (ReadBytes(instance.BaseAddress, (uint) instance.ClassSize, out ReadOnlySpan<byte> fullClassBytes))
+				return ReadClass(instance, fullClassBytes);
 
 			// Clear All Class Offset
 			RemoveValueData(instance.Offsets);
 			return false;
 		}
 
-		public static bool ReadClass<T>(T instance, int address) where T : ExClass => ReadClass(instance, (UIntPtr)address);
-		public static bool ReadClass<T>(T instance, long address) where T : ExClass => ReadClass(instance, (UIntPtr)address);
+		public static bool ReadClass<T>(T instance, int address) where T : ExClass => ReadClass(instance);
+		public static bool ReadClass<T>(T instance, long address) where T : ExClass => ReadClass(instance);
 	}
 }

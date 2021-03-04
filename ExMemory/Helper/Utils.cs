@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace ExMemory.Helper
+namespace ExternalMemory.Helper
 {
 	public static class Utils
 	{

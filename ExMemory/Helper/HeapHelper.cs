@@ -1,50 +1,39 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace ExMemory.Helper
+namespace ExternalMemory.Helper
 {
 	public static class HeapHelper
 	{
-		public class StructAllocator<TStruct> : IDisposable
+		public struct StructAllocator<TStruct> : IDisposable
 		{
-			public IntPtr UnManagedPtr { get; private set; }
+			public IntPtr UnmanagedPtr { get; private set; }
 			public TStruct ManagedStruct { get; private set; }
 
-			public StructAllocator()
-			{
-				UnManagedPtr = Marshal.AllocHGlobal(Marshal.SizeOf<TStruct>());
-			}
-			~StructAllocator()
-			{
-				if (UnManagedPtr == IntPtr.Zero)
-					return;
-
-				Marshal.FreeHGlobal(UnManagedPtr);
-				UnManagedPtr = IntPtr.Zero;
-			}
-
 			/// <summary>
-			/// Update unmanaged data from `<see cref="UnManagedPtr"/>` to managed struct
+			/// Update unmanaged data from `<see cref="UnmanagedPtr"/>` to managed struct
 			/// </summary>
 			public bool Update()
 			{
-				if (UnManagedPtr == IntPtr.Zero)
-					return false;
+				if (UnmanagedPtr == IntPtr.Zero)
+					UnmanagedPtr = Marshal.AllocHGlobal(Marshal.SizeOf<TStruct>());
 
-				ManagedStruct = Marshal.PtrToStructure<TStruct>(UnManagedPtr);
+				ManagedStruct = Marshal.PtrToStructure<TStruct>(UnmanagedPtr);
 				return true;
 			}
 
 			public void Dispose()
 			{
-				Marshal.FreeHGlobal(UnManagedPtr);
-				UnManagedPtr = IntPtr.Zero;
-				GC.SuppressFinalize(this);
+				if (UnmanagedPtr == IntPtr.Zero)
+					return;
+
+				Marshal.FreeHGlobal(UnmanagedPtr);
+				UnmanagedPtr = IntPtr.Zero;
 			}
 
 			public static implicit operator IntPtr(StructAllocator<TStruct> w)
 			{
-				return w.UnManagedPtr;
+				return w.UnmanagedPtr;
 			}
 		}
 
@@ -119,25 +108,26 @@ namespace ExMemory.Helper
 			}
 
 			#region IDisposable Support
-			private bool disposedValue = false; // To detect redundant calls
+
+			private bool _disposedValue; // To detect redundant calls
 
 			protected virtual void Dispose(bool disposing)
 			{
-				if (!disposedValue)
+				if (_disposedValue)
+					return;
+
+				if (disposing)
 				{
-					if (disposing)
-					{
-						// TODO: dispose managed state (managed objects).
-					}
-
-					if (Ptr == IntPtr.Zero)
-						return;
-
-					Marshal.FreeHGlobal(Ptr);
-					Ptr = IntPtr.Zero;
-
-					disposedValue = true;
+					// TODO: dispose managed state (managed objects).
 				}
+
+				if (Ptr == IntPtr.Zero)
+					return;
+
+				Marshal.FreeHGlobal(Ptr);
+				Ptr = IntPtr.Zero;
+
+				_disposedValue = true;
 			}
 
 			public void Dispose()
@@ -145,6 +135,7 @@ namespace ExMemory.Helper
 				Dispose(true);
 				GC.SuppressFinalize(this);
 			}
+
 			#endregion
 		}
 	}

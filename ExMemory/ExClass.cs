@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using ExMemory.Helper;
+using ExternalMemory.Helper;
 
-namespace ExMemory
+namespace ExternalMemory
 {
 	public abstract class ExClass
 	{
@@ -77,7 +77,7 @@ namespace ExMemory
 		/// </summary>
 		public virtual bool UpdateData()
 		{
-			return BaseAddress != UIntPtr.Zero && ExMemory.ReadClass(this, BaseAddress);
+			return BaseAddress != UIntPtr.Zero && ExMemory.ReadClass(this);
 		}
 
 		/// <summary>
@@ -88,12 +88,7 @@ namespace ExMemory
 		public virtual bool UpdateData(ReadOnlyMemory<byte> fullClassBytes)
 		{
 			FullClassBytes = fullClassBytes;
-			return BaseAddress != UIntPtr.Zero && ExMemory.ReadClass(this, BaseAddress, fullClassBytes.Span);
-		}
-
-		public bool WriteOffset<T>(ExOffset<T> offset, T value)
-		{
-			return offset.Write(value);
+			return BaseAddress != UIntPtr.Zero && ExMemory.ReadClass(this, fullClassBytes.Span);
 		}
 	}
 }

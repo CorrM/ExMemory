@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using ExMemory.Helper;
+using ExternalMemory.Helper;
 
-namespace ExMemory
+namespace ExternalMemory
 {
 	public enum OffsetType
 	{
@@ -104,7 +104,7 @@ namespace ExMemory
 
 				case OffsetType.UIntPtr:
 				case OffsetType.ExternalClass when ExternalClassIsPointer:
-					Value = (UIntPtr)(ExMemory.Is64BitMemory ? (ulong)OffsetMarshalType.ByteArrayToObject(valueBytes) : (uint)OffsetMarshalType.ByteArrayToObject(valueBytes));
+					Value = OffsetMarshalType.ByteArrayToObject(valueBytes);
 					break;
 
 				case OffsetType.ExternalClass:
@@ -223,5 +223,6 @@ namespace ExMemory
 		}
 
 		public T Read() => Read<T>();
+		public void Write(T value) => Write<T>(value);
 	}
 }
