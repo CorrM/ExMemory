@@ -109,15 +109,5 @@ namespace ExternalMemory
 
 			return true;
 		}
-		internal static bool ReadAndProcessClass<T>(T instance) where T : ExClass
-		{
-			// Read Full Class
-			if (ReadBytes(instance.Address, (uint) instance.ClassSize, out ReadOnlySpan<byte> fullClassBytes))
-				return ProcessClass(instance, fullClassBytes);
-
-			// Clear All Class Offset
-			RemoveValueData(instance.Offsets);
-			return false;
-		}
 	}
 }
