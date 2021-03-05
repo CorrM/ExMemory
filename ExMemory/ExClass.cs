@@ -60,22 +60,44 @@ namespace ExternalMemory
 		protected virtual void InitOffsets() {}
 
 		/// <summary>
-		/// Read Data And Set It On This Class.
+		/// Called after <see cref="UpdateData()"/>,
+		/// Return value form that function will override return value of <see cref="UpdateData()"/>
 		/// </summary>
-		public virtual bool UpdateData()
+		/// <param name="updated">State of <see cref="UpdateData()"/></param>
+		/// <returns>Return value of <paramref name="updated"/></returns>
+		protected virtual bool AfterUpdate(bool updated)
 		{
-			return ExMemory.IsInit && Address != UIntPtr.Zero && ExMemory.ReadClass(this);
+			return updated;
 		}
 
 		/// <summary>
-		/// Set Data On This Class (Doesn't Call ReadMemory Callback, it just fill class with that data),
-		/// Be Careful When Using This Function
+		/// Set data on this class (Doesn't call ReadMemory callback, it just fill class with that data),
+		/// Be careful when using this function
 		/// </summary>
 		/// <param name="fullClassBytes">Full bytes of <see cref="ExClass"/></param>
-		public virtual bool UpdateData(ReadOnlyMemory<byte> fullClassBytes)
+		public bool UpdateData(ReadOnlySpan<byte> fullClassBytes)
 		{
-			FullClassBytes = fullClassBytes;
-			return Address != UIntPtr.Zero && ExMemory.ReadClass(this, fullClassBytes.Span);
+			if (!ExMemory.IsInit || Address == UIntPtr.Zero)
+				return false;
+
+			FullClassBytes = fullClassBytes.ToArray();
+
+			bool ret = ExMemory.ProcessClass(this, fullClassBytes);
+			return AfterUpdate(ret);
+		}
+
+		/// <summary>
+		/// Read Data And Set It On This Class.
+		/// </summary>
+		public bool UpdateData()
+		{
+			// Read Full Class
+			if (ExMemory.ReadBytes(Address, (uint)ClassSize, out ReadOnlySpan<byte> fullClassBytes))
+				return UpdateData(fullClassBytes);
+
+			// Clear All Class Offset
+			//ExMemory.RemoveValueData(Offsets);
+			return false;
 		}
 	}
 }

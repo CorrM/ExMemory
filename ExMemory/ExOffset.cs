@@ -36,11 +36,11 @@ namespace ExternalMemory
 					return Helper.MarshalType.ByteArrayToObject(MarshalType, offsetBytes);
 			}
 		}
-        internal void RemoveValueAndData()
-        {
-            Value = default;
-            ValueBytes = ReadOnlyMemory<byte>.Empty;
-        }
+		internal void RemoveValueAndData()
+		{
+			Value = default;
+			ValueBytes = ReadOnlyMemory<byte>.Empty;
+		}
 		internal void AssignDefaultExternalValue()
 		{
 			Value = Activator.CreateInstance(ExternalValueType);

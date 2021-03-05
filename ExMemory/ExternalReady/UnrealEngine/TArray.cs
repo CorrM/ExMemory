@@ -46,6 +46,8 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 		public int Count => _count?.Value ?? 0;
 		public int Max => _max?.Value ?? 0;
 
+		public T this[int index] => Items[index];
+
 		#endregion
 
 		public TArray(UIntPtr address) : base(address)
@@ -72,10 +74,12 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 			_max = new ExOffset<int>(curOff);
 		}
 
-		public override bool UpdateData()
+		protected override bool AfterUpdate(bool updated)
 		{
-			// Read Array (Base and Size)
-			if (!Read())
+			if (!updated)
+				return false;
+
+			if (!InitItems())
 				return false;
 
 			int counter = 0;
@@ -108,7 +112,7 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 				if (ReadInfo.IsPointerToData)
 					item.UpdateData();
 				else
-					item.UpdateData(tArrayData.Slice(offset, itemSize).ToArray());
+					item.UpdateData(tArrayData.Slice(offset, itemSize));
 
 				// Move Offset
 				offset += itemSize;
@@ -127,13 +131,9 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 			return true;
 		}
 
-		private bool Read()
+		private bool InitItems()
 		{
-			if (!ExMemory.ReadClass(this))
-				return false;
-
 			int count = ReadInfo.UseMaxAsReadCount ? Max : Count;
-
 			if (count > MaxCountTArrayCanCarry)
 				return false;
 
@@ -172,9 +172,5 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 
 			return (Max > Count) && Address != UIntPtr.Zero;
 		}
-
-		#region Indexer
-		public T this[int index] => Items[index];
-		#endregion
 	}
 }

@@ -28,7 +28,7 @@ namespace ExternalMemory
 			IsInit = true;
 		}
 
-		private static void RemoveValueData(IEnumerable<ExOffset> unrealOffsets)
+		internal static void RemoveValueData(IEnumerable<ExOffset> unrealOffsets)
 		{
 			foreach (ExOffset unrealOffset in unrealOffsets)
 				unrealOffset.RemoveValueAndData();
@@ -47,7 +47,7 @@ namespace ExternalMemory
 			return WriteBytesCallBack?.Invoke(address, bytes) ?? false;
 		}
 
-		internal static bool ReadClass<T>(T instance, ReadOnlySpan<byte> fullClassBytes) where T : ExClass
+		internal static bool ProcessClass<T>(T instance, ReadOnlySpan<byte> fullClassBytes) where T : ExClass
 		{
 			// Set Bytes
 			instance.FullClassBytes = fullClassBytes.ToArray();
@@ -82,7 +82,7 @@ namespace ExternalMemory
 						continue;
 
 					// Read Nested Pointer Class
-					if (!ReadClass(exOffset))
+					if (!exOffset.UpdateData())
 					{
 						// throw new Exception($"Can't Read `{offset.ExternalClassType.Name}` As `ExternalClass`.", new Exception($"Value Count = {offset.Size}"));
 						return false;
@@ -99,7 +99,7 @@ namespace ExternalMemory
 					exOffset.Address += offset.Offset;
 
 					// Read Nested Instance Class
-					if (!ReadClass((T)exOffset, offset.ValueBytes.Span))
+					if (!((T)exOffset).UpdateData(offset.ValueBytes.Span))
 					{
 						// throw new Exception($"Can't Read `{offset.ExternalClassType.Name}` As `ExternalClass`.", new Exception($"Value Count = {offset.Size}"));
 						return false;
@@ -109,11 +109,11 @@ namespace ExternalMemory
 
 			return true;
 		}
-		internal static bool ReadClass<T>(T instance) where T : ExClass
+		internal static bool ReadAndProcessClass<T>(T instance) where T : ExClass
 		{
 			// Read Full Class
 			if (ReadBytes(instance.Address, (uint) instance.ClassSize, out ReadOnlySpan<byte> fullClassBytes))
-				return ReadClass(instance, fullClassBytes);
+				return ProcessClass(instance, fullClassBytes);
 
 			// Clear All Class Offset
 			RemoveValueData(instance.Offsets);
