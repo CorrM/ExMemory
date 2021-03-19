@@ -2,19 +2,37 @@
 
 namespace ExternalMemory.ExternalReady.UnrealEngine
 {
-	/*
 	public class FString : ExClass
 	{
 		#region [ Offsets ]
 
 		protected ExOffset<UIntPtr> _stringPointer;
-		protected ExOffset<string> _stringData;
+		protected ExOffset<int> _stringData;
+		protected ExOffset<int> _stringCount;
 
 		#endregion
 
 		#region [ Props ]
 
-		public string Str => _stringData?.Read() ?? string.Empty;
+		public UIntPtr StringPointer
+		{
+			get => _stringPointer.Value;
+			set => _stringPointer.Write(value);
+		}
+
+		public int StringData
+		{
+			get => _stringData.Value;
+			set => _stringData.Write(value);
+		}
+
+		public int StringCount
+		{
+			get => _stringCount.Value;
+			set => _stringCount.Write(value);
+		}
+
+		//public string Str => _stringData?.Value ?? string.Empty;
 
 		#endregion
 
@@ -25,9 +43,11 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 		{
 			base.InitOffsets();
 
-			_stringPointer = new ExOffset<UIntPtr>(0x00);
-			_stringData = new ExOffset<string>(_stringPointer, 0x00);
+			int offset = 0x00;
+
+			_stringPointer = new ExOffset<UIntPtr>(offset); offset += ExMemory.PointerSize;
+			_stringData = new ExOffset<int>(offset); offset += 4;
+			_stringCount = new ExOffset<int>(offset);
 		}
 	}
-	*/
 }

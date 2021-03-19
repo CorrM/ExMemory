@@ -12,8 +12,11 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 
 		#region [ Props ]
 
-		public T Value => (T)(object)_enumVal.Value;
-
+		public T Value
+		{
+			get => (T)(object)_enumVal.Value;
+			set => _enumVal.Write((byte)(object)value);
+		}
 		#endregion
 
 		public TEnumAsByte() { }

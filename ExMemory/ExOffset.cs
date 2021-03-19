@@ -7,11 +7,14 @@ namespace ExternalMemory
 {
 	public abstract class ExOffset
 	{
-		internal Type MarshalType;
+		internal Type MarshalType { get; set; }
 
+		internal string Name { get; set; }
+		internal ExClass Parent { get; set; }
 		internal Type ExternalValueType { get; set; }
 		internal OffsetType OffType { get; set; }
 		internal object Value { get; set; }
+		internal object ValuePtrAsObj { get; set; }
 
 		public UIntPtr OffsetAddress { get; internal set; }
 		public ExKind ExternalType { get; internal set; }
@@ -19,6 +22,7 @@ namespace ExternalMemory
 		public int Size { get; internal set; }
 		public ReadOnlyMemory<byte> ValueBytes { get; internal set; }
 
+		internal abstract void Init();
 		internal object GetValueFromBytes(ReadOnlySpan<byte> offsetBytes)
 		{
 			switch (OffType)
@@ -31,7 +35,6 @@ namespace ExternalMemory
 					// The value is ByteArray it's for Offsets inside the ExternalClass
 					return ValueBytes.ToArray();
 
-				case OffsetType.ValueType:
 				default:
 					return Helper.MarshalType.ByteArrayToObject(MarshalType, offsetBytes);
 			}
@@ -45,35 +48,53 @@ namespace ExternalMemory
 		{
 			Value = Activator.CreateInstance(ExternalValueType);
 		}
+
+		public T PtrAsEx<T>() where T : ExClass, new()
+		{
+			if (ValuePtrAsObj is not null)
+				return (T)ValuePtrAsObj;
+
+			if (OffType != OffsetType.IntPtr)
+				throw new ArgumentException($"'{Name}' is not a pointer.", Name);
+
+			ValuePtrAsObj = new T();
+
+			ExClass exClass = (T)ValuePtrAsObj;
+			exClass.Address = (UIntPtr)Value;
+
+			exClass.UpdateData();
+
+			return (T)ValuePtrAsObj;
+		}
 	}
 
 	public sealed class ExOffset<T> : ExOffset
 	{
 		public new T Value => (T)base.Value;
 
-		private ExOffset(int offset, OffsetType offType, ExKind exType)
+		public ExOffset(int offset, ExKind exType)
 		{
+			var offType = OffsetType.ExClass;
+			if (!typeof(T).IsSubclassOf(typeof(ExClass)) && !typeof(T).IsSubclassOfRawGeneric(typeof(ExOffset<>)))
+				offType = OffsetType.ValueType;
+
 			Offset = offset;
-			OffType = offType;
 			ExternalType = exType;
+			OffType = offType;
+		}
+		public ExOffset(int offset)
+		{
+			if (typeof(T).IsSubclassOf(typeof(ExClass)) || typeof(T).IsSubclassOfRawGeneric(typeof(ExOffset<>)))
+				throw new InvalidCastException("Use another constructor for `ExClass` types.");
 
-			Init();
-		}
-		public ExOffset(int offset, ExKind exType) : this(offset, OffsetType.ExClass, exType)
-		{
-			if (!typeof(T).IsSubclassOf(typeof(ExClass)))
-				throw new InvalidCastException("This Constructor For `ExternalClass` Types Only.");
-		}
-		public ExOffset(int offset) : this(offset, OffsetType.ValueType, ExKind.Instance)
-		{
-			if (typeof(T).IsSubclassOf(typeof(ExClass)))
-				throw new InvalidCastException("Use Other Constructor For `ExternalClass` Types.");
+			Offset = offset;
+			ExternalType = ExKind.Instance;
+			OffType = OffsetType.ValueType;
 		}
 
-		private void Init()
+		internal override void Init()
 		{
 			Type thisType = typeof(T);
-
 			if (thisType == typeof(IntPtr) || thisType == typeof(UIntPtr))
 			{
 				OffType = OffsetType.IntPtr;
@@ -83,14 +104,23 @@ namespace ExternalMemory
 			}
 			else if (thisType.IsSubclassOf(typeof(ExClass)) || thisType.IsSubclassOfRawGeneric(typeof(ExOffset<>)))
 			{
-				// OffType Set On Other Constructor If It's `ExternalClass`
 				if (OffType != OffsetType.ExClass)
-					throw new Exception("Use Other Constructor For `ExternalClass` Types.");
+					throw new Exception("Use another constructor for `ExClass` types.");
 
-				MarshalType = ExternalType == ExKind.Pointer ? typeof(UIntPtr) : thisType;
 				ExternalValueType = thisType;
-				base.Value = Activator.CreateInstance<T>();
-				Size = ExternalType == ExKind.Pointer ? ExMemory.PointerSize : ((ExClass)base.Value).ClassSize;
+
+				if (ExternalType == ExKind.Pointer)
+				{
+					base.Value = null;
+					MarshalType = typeof(UIntPtr);
+					Size = ExMemory.PointerSize;
+				}
+				else
+				{
+					base.Value = Activator.CreateInstance<T>();
+					MarshalType = thisType;
+					Size = ((ExClass)base.Value).ClassSize;
+				}
 			}
 			else
 			{
@@ -99,6 +129,7 @@ namespace ExternalMemory
 				base.Value = default;
 			}
 		}
+
 		public bool Write(T value)
 		{
 			if (OffsetAddress == UIntPtr.Zero)

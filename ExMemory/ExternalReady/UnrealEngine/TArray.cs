@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
+using ExternalMemory.Helper;
 
 namespace ExternalMemory.ExternalReady.UnrealEngine
 {
 	// ReSharper disable once InconsistentNaming
 	/// <summary>
-	/// TArray Class To Fit UnrealEngine, It's only Support Pointer To <see cref="ExClass"/> Only
+	/// TArray Class To Fit UnrealEngine
 	/// </summary>
-	public class TArray<T> : ExClass where T : ExClass, new()
+	public class TArray<T> : ExClass
 	{
 		public class DelayData
 		{
@@ -24,7 +25,7 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 			public bool UseMaxAsReadCount { get; set; } = false;
 		}
 
-		private readonly int _itemSize;
+		private int _itemSize = -1;
 
 		public List<T> Items { get; }
 
@@ -52,8 +53,6 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 
 		public TArray(UIntPtr address) : base(address)
 		{
-			_itemSize = ((T)Activator.CreateInstance(typeof(T)))?.ClassSize ?? throw new NullReferenceException($"Can't create instance of '{typeof(T).Name}'.");
-
 			Items = new List<T>();
 			DelayInfo = new DelayData();
 			ReadInfo = new ReadData();
@@ -73,7 +72,6 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 			_count = new ExOffset<int>(curOff); curOff += 0x04;
 			_max = new ExOffset<int>(curOff);
 		}
-
 		protected override bool AfterUpdate(bool updated)
 		{
 			if (!updated)
@@ -82,23 +80,37 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 			if (!InitItems())
 				return false;
 
+			if (_itemSize == -1)
+			{
+				if (typeof(T).IsSubclassOf(typeof(ExClass)))
+				{
+					if (ReadInfo.IsPointerToData)
+						_itemSize = ExMemory.PointerSize;
+					else
+						_itemSize = ((ExClass)Activator.CreateInstance(typeof(T)))?.ClassSize ?? throw new NullReferenceException($"Can't create instance of '{typeof(T).Name}'.");
+				}
+				else
+					_itemSize = MarshalType.GetSizeOfType(typeof(T));
+			}
+
 			int counter = 0;
-			int itemSize = ReadInfo.IsPointerToData ? ExMemory.PointerSize : _itemSize;
-			itemSize += ReadInfo.BadSizeAfterEveryItem;
+			int itemSize = _itemSize + ReadInfo.BadSizeAfterEveryItem;
 
 			// Get TArray Data
 			ExMemory.ReadBytes(Data, (uint)(Items.Count * itemSize), out ReadOnlySpan<byte> tArrayData);
 			int offset = 0;
 
-			foreach (T item in Items)
+			for (int i = 0; i < Items.Count; i++)
 			{
+				T item = Items[i];
+
 				UIntPtr itemAddress;
 				if (ReadInfo.IsPointerToData)
 				{
 					// Get Item Address (Pointer Value (aka Pointed Address))
 					itemAddress = ExMemory.Is64BitMemory
-						? (UIntPtr)MemoryMarshal.Read<ulong>(tArrayData[offset..])
-						: (UIntPtr)MemoryMarshal.Read<uint>(tArrayData[offset..]);
+						? (UIntPtr) MemoryMarshal.Read<ulong>(tArrayData[offset..])
+						: (UIntPtr) MemoryMarshal.Read<uint>(tArrayData[offset..]);
 				}
 				else
 				{
@@ -106,13 +118,31 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 				}
 
 				// Update current item
-				item.Address = itemAddress;
+				if (typeof(T).IsSubclassOf(typeof(ExClass)))
+				{
+					var exItem = (ExClass)(object)item;
+					exItem.Address = itemAddress;
 
-				// Set Data
-				if (ReadInfo.IsPointerToData)
-					item.UpdateData();
+					/*
+					// Set Data
+					if (ReadInfo.IsPointerToData)
+						exItem.UpdateData();
+					else
+						exItem.UpdateData(tArrayData.Slice(offset, itemSize));
+					*/
+				}
 				else
-					item.UpdateData(tArrayData.Slice(offset, itemSize));
+				{
+					if (ReadInfo.IsPointerToData)
+					{
+						// Todo: Implement that
+					}
+					else
+					{
+						Items[i] = (T)MarshalType.ByteArrayToObject(typeof(T), tArrayData.Slice(offset, itemSize));
+						// Items[i] = MemoryMarshal.Read<T>(tArrayData.Slice(offset, itemSize));
+					}
+				}
 
 				// Move Offset
 				offset += itemSize;
@@ -134,14 +164,11 @@ namespace ExternalMemory.ExternalReady.UnrealEngine
 		private bool InitItems()
 		{
 			int count = ReadInfo.UseMaxAsReadCount ? Max : Count;
-			if (count > MaxCountTArrayCanCarry)
+			if (count > MaxCountTArrayCanCarry || count < 0)
 				return false;
 
 			try
 			{
-				if (count <= 0)
-					return false;
-
 				if (Items.Count > count)
 				{
 					Items.RemoveRange(count, Items.Count - count);

@@ -47,8 +47,10 @@ namespace ExternalMemory
 			return WriteBytesCallBack?.Invoke(address, bytes) ?? false;
 		}
 
-		internal static bool ProcessClass<T>(T instance, ReadOnlySpan<byte> fullClassBytes) where T : ExClass
+		internal static bool ProcessClass<T>(T instance, ReadOnlySpan<byte> fullClassBytes, HashSet<UIntPtr> readList) where T : ExClass
 		{
+			readList ??= new HashSet<UIntPtr>();
+
 			// Set Bytes
 			instance.FullClassBytes = fullClassBytes.ToArray();
 
@@ -70,21 +72,28 @@ namespace ExternalMemory
 					// Pointer read as IntPtr,
 					var valPtr = (UIntPtr)offset.GetValueFromBytes(offset.ValueBytes.Span);
 
-					// offset.AssignDefaultExternalValue();
+					offset.AssignDefaultExternalValue();
 					if (offset.Value is not ExClass exOffset)
-						throw new InvalidOperationException($"Can't create instance of '{offset.GetType().Name}'.");
+						throw new InvalidOperationException($"Can't create instance of '{offset.ExternalValueType.Name}'.");
 
 					// Set Class Info
 					exOffset.Address = valPtr;
 
 					// Null Pointer
-					if (valPtr == UIntPtr.Zero)
+					if (exOffset.Address == UIntPtr.Zero)
 						continue;
 
+					// Stop stack overflow
+					if (readList.Contains(exOffset.Address))
+						continue;
+
+					// Add it to read list
+					readList.Add(exOffset.Address);
+
 					// Read Nested Pointer Class
-					if (!exOffset.UpdateData())
+					if (!exOffset.UpdateData(readList))
 					{
-						// throw new Exception($"Can't Read `{offset.ExternalClassType.Name}` As `ExternalClass`.", new Exception($"Value Count = {offset.Size}"));
+						// throw new Exception($"Can't Read `{offset.Name}` As `ExternalClass`.", new Exception($"Value Count = {offset.Size}"));
 						return false;
 					}
 				}
@@ -96,10 +105,11 @@ namespace ExternalMemory
 						throw new InvalidOperationException($"Can't create instance of '{offset.GetType().Name}'.");
 
 					// Set Class Info
-					exOffset.Address += offset.Offset;
+					exOffset.Address = instance.Address + offset.Offset;
 
 					// Read Nested Instance Class
-					if (!((T)exOffset).UpdateData(offset.ValueBytes.Span))
+					bool updateState = ((T)exOffset).UpdateData(offset.ValueBytes.Span);
+					if (!updateState)
 					{
 						// throw new Exception($"Can't Read `{offset.ExternalClassType.Name}` As `ExternalClass`.", new Exception($"Value Count = {offset.Size}"));
 						return false;

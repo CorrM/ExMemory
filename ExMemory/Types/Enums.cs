@@ -9,6 +9,7 @@
 
     public enum ExKind
     {
+        None,
         Instance,
         Pointer
     }
